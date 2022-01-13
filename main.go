@@ -26,6 +26,7 @@ func init() {
 
 func handleAuthz(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Security!")
+	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 }
 
 func handleMicroservice(w http.ResponseWriter, r *http.Request) {
@@ -34,8 +35,8 @@ func handleMicroservice(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	defer resp.Body.Close()
-	fmt.Println("Response status:", resp.Status)
 	fmt.Fprintf(w, "External service!")
+	log.Printf("External service address: %s with response: %s", *externalService, resp.Status)
 }
 
 func Router() *mux.Router {
@@ -63,5 +64,6 @@ func main() {
 	)
 
 	handlerChain := errorFault.Handler(Router())
+	log.Println("Faulty is starting...")
 	log.Fatal(http.ListenAndServe(":8080", handlerChain))
 }
