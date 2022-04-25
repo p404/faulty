@@ -25,5 +25,5 @@ jobs:
       - name: Build image and push to Docker Hub and GitHub Container Registry
         uses: docker/build-push-action@v2
         with:
-          tags: p404/faulty:latest
+          tags: faulty:latest
           push: true
