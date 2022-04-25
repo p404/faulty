@@ -11,6 +11,7 @@ import (
 
 	"github.com/github/go-fault"
 	"github.com/gorilla/mux"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
 	"go.opentelemetry.io/contrib/propagators/b3"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -90,6 +91,7 @@ func Router() *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/authz", handleAuthz).Methods("GET")
 	r.HandleFunc("/microservice", handleMicroservice).Methods("GET")
+
 	return r
 }
 
@@ -117,6 +119,8 @@ func main() {
 	)
 
 	handlerChain := errorFault.Handler(Router())
+	otelHandler := otelhttp.NewHandler(handlerChain, "http-server")
+
 	log.Println("Faulty is starting...")
-	log.Fatal(http.ListenAndServe(":8080", handlerChain))
+	log.Fatal(http.ListenAndServe(":8080", otelHandler))
 }
