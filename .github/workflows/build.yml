@@ -26,4 +26,5 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           tags: faulty:latest
+          context: .
           push: true
