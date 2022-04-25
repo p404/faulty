@@ -7,6 +7,7 @@ RUN go build -o faulty .
 
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates
+RUN apk add --update git
 COPY --from=build /app/faulty /usr/local/bin/faulty
 EXPOSE 8080
 
