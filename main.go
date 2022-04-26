@@ -12,6 +12,7 @@ import (
 	"github.com/github/go-fault"
 	"github.com/gorilla/mux"
 	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp/filters"
 	"go.opentelemetry.io/contrib/propagators/b3"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/exporters/jaeger"
@@ -30,6 +31,15 @@ var (
 	faultType       = flag.String("type", "error", "Type of the value")
 	latency         = flag.Int64("latency", 1, "Latency in milliseconds to be added to fault type slowness")
 	collectorAddr   = flag.String("collector", "http://localhost:14268/api/traces", "Collector endpoint")
+	latencyDuration time.Duration
+	errorInjector   fault.Injector
+)
+
+var WithInternalPathFilter = otelhttp.WithFilter(
+	filters.None(
+		filters.Path("/ping"),
+		filters.Path("/health"),
+	),
 )
 
 func init() {
@@ -96,9 +106,7 @@ func Router() *mux.Router {
 }
 
 func main() {
-	var latencyDuration time.Duration
 	latencyDuration = time.Duration(*latency)
-	var errorInjector fault.Injector
 
 	if strings.TrimRight(*faultType, "\n") == "error" {
 		errorInjector, _ = fault.NewErrorInjector(500)
@@ -118,8 +126,9 @@ func main() {
 		fault.WithPathBlocklist([]string{"/ping", "/health"}),
 	)
 
+	opts := []otelhttp.Option{WithInternalPathFilter}
 	handlerChain := errorFault.Handler(Router())
-	otelHandler := otelhttp.NewHandler(handlerChain, "http-server")
+	otelHandler := otelhttp.NewHandler(handlerChain, "http-server", opts...)
 
 	log.Println("Faulty is starting...")
 	log.Fatal(http.ListenAndServe(":8080", otelHandler))
